@@ -1,79 +1,14 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MediConnect | Doctor-Patient Appointment Management System</title>
-  <style>
-    :root {
-      --bg-main: #0b132b;
-      --bg-card: rgba(28, 37, 65, 0.9);
-      --bg-sidebar: #1c2541;
-      --border-color: rgba(255, 255, 255, 0.1);
-      --border-accent: rgba(58, 80, 107, 0.6);
-      --primary: #3a86ff;
-      --teal: #06b6d4;
-      --emerald: #10b981;
-      --amber: #f59e0b;
-      --rose: #ef4444;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --radius-md: 14px;
-      --radius-full: 9999px;
-      --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: var(--font-body); background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; }
-    
-    .nav-header { background: var(--bg-sidebar); border-bottom: 1px solid var(--border-color); padding: 0.85rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
-    .brand { font-size: 1.4rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 10px; }
-    .brand-icon { width: 38px; height: 38px; background: linear-gradient(135deg, #3a86ff, #06b6d4); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.2rem; }
-    
-    .nav-actions { display: flex; align-items: center; gap: 1rem; }
-    .btn-primary { background: linear-gradient(135deg, #3a86ff, #2563eb); color: #fff; border: none; padding: 9px 18px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-secondary { background: rgba(255,255,255,0.06); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; }
-    .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 6px 12px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 600; cursor: pointer; }
-    .btn-danger { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); padding: 6px 12px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 600; cursor: pointer; }
-
-    .fa2-banner { background: linear-gradient(90deg, rgba(58, 134, 255, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%); border-bottom: 1px solid var(--border-accent); padding: 10px 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 0.88rem; }
-    .task-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .chip { background: rgba(255,255,255,0.08); padding: 4px 10px; border-radius: var(--radius-full); cursor: pointer; font-size: 0.78rem; font-weight: 600; border: 1px solid var(--border-color); }
-    .chip:hover { border-color: var(--primary); color: var(--primary); }
-
-    .app-body { display: flex; min-height: calc(100vh - 110px); }
-    .sidebar { width: 250px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: 6px; }
-    .side-item { background: transparent; color: var(--text-muted); border: none; padding: 12px 14px; border-radius: var(--radius-md); text-align: left; font-weight: 600; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 10px; font-size: 0.92rem; }
-    .side-item.active { background: rgba(58, 134, 255, 0.25); color: #fff; border: 1px solid var(--border-accent); }
-
-    .main-content { flex: 1; padding: 2rem; max-width: 1300px; margin: 0 auto; width: 100%; }
-
-    .card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem; }
-
-    .badge { padding: 4px 10px; border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-    .badge-pending { background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
-    .badge-accepted { background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
-    .badge-rejected { background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
-
-    .custom-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .custom-table th, .custom-table td { padding: 12px 14px; border-bottom: 1px solid var(--border-color); font-size: 0.9rem; }
-    .custom-table th { color: var(--text-dim); text-transform: uppercase; font-size: 0.75rem; }
-
-    .input-field, select, textarea { width: 100%; background: rgba(11, 19, 43, 0.7); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 14px; border-radius: var(--radius-md); margin-top: 4px; font-size: 0.92rem; }
-
-    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
-    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem; }
-    .modal-box { background: var(--bg-sidebar); border: 1px solid var(--border-accent); border-radius: var(--radius-md); width: 100%; max-width: 520px; padding: 2rem; }
-
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg-sidebar); border: 1px solid var(--primary); color: #fff; padding: 12px 20px; border-radius: var(--radius-md); box-shadow: 0 10px 30px rgba(0,0,0,0.5); font-weight: 600; display: flex; align-items: center; gap: 10px; z-index: 2000; }
-  </style>
+  <link rel="stylesheet" href="./preview.css" />
 </head>
+
 <body>
-  <!-- Header -->
   <header class="nav-header">
     <div class="brand">
       <div class="brand-icon">❤️</div>
@@ -86,7 +21,6 @@
     </div>
   </header>
 
-  <!-- FA-2 Demo Guidance Banner -->
   <div class="fa2-banner">
     <span>🎓 <strong>FA-2 Demonstration Mode:</strong> Test full Patient & Doctor workflows</span>
     <div class="task-chips">
@@ -179,7 +113,7 @@
               <div style="margin-bottom:1rem;">
                 <label style="font-size:0.85rem;">Time Slot</label>
                 <select id="bookTimeSelect">
-                  ${doc.slots.map(s => `<option value="${s.time}" ${s.status==='Booked'?'disabled':''}>${s.time} — ${s.status}</option>`).join('')}
+                  ${doc.slots.map(s => `<option value="${s.time}" ${s.status === 'Booked' ? 'disabled' : ''}>${s.time} — ${s.status}</option>`).join('')}
                 </select>
               </div>
               <div style="margin-bottom:1rem;">
@@ -255,27 +189,25 @@
     }
 
     function render() {
-      // Sidebar
       const sidebar = document.getElementById('sidebarContainer');
       if (currentRole === 'patient') {
         sidebar.innerHTML = `
-          <button class="side-item ${currentTab==='dashboard'?'active':''}" onclick="setTab('dashboard')">📊 Dashboard</button>
-          <button class="side-item ${currentTab==='doctors'?'active':''}" onclick="setTab('doctors')">🔍 Find Doctors</button>
-          <button class="side-item ${currentTab==='appointments'?'active':''}" onclick="setTab('appointments')">📅 My Appointments</button>
-          <button class="side-item ${currentTab==='reports'?'active':''}" onclick="setTab('reports')">📁 Medical Reports</button>
-          <button class="side-item ${currentTab==='profile'?'active':''}" onclick="setTab('profile')">👤 Profile</button>
+          <button class="side-item ${currentTab === 'dashboard' ? 'active' : ''}" onclick="setTab('dashboard')">📊 Dashboard</button>
+          <button class="side-item ${currentTab === 'doctors' ? 'active' : ''}" onclick="setTab('doctors')">🔍 Find Doctors</button>
+          <button class="side-item ${currentTab === 'appointments' ? 'active' : ''}" onclick="setTab('appointments')">📅 My Appointments</button>
+          <button class="side-item ${currentTab === 'reports' ? 'active' : ''}" onclick="setTab('reports')">📁 Medical Reports</button>
+          <button class="side-item ${currentTab === 'profile' ? 'active' : ''}" onclick="setTab('profile')">👤 Profile</button>
         `;
       } else {
         sidebar.innerHTML = `
-          <button class="side-item ${currentTab==='dashboard'?'active':''}" onclick="setTab('dashboard')">📊 Dashboard</button>
-          <button class="side-item ${currentTab==='slots'?'active':''}" onclick="setTab('slots')">⏰ Manage Slots</button>
-          <button class="side-item ${currentTab==='requests'?'active':''}" onclick="setTab('requests')">📋 Appointments</button>
-          <button class="side-item ${currentTab==='reports'?'active':''}" onclick="setTab('reports')">📁 Patient Reports</button>
-          <button class="side-item ${currentTab==='profile'?'active':''}" onclick="setTab('profile')">👤 Profile</button>
+          <button class="side-item ${currentTab === 'dashboard' ? 'active' : ''}" onclick="setTab('dashboard')">📊 Dashboard</button>
+          <button class="side-item ${currentTab === 'slots' ? 'active' : ''}" onclick="setTab('slots')">⏰ Manage Slots</button>
+          <button class="side-item ${currentTab === 'requests' ? 'active' : ''}" onclick="setTab('requests')">📋 Appointments</button>
+          <button class="side-item ${currentTab === 'reports' ? 'active' : ''}" onclick="setTab('reports')">📁 Patient Reports</button>
+          <button class="side-item ${currentTab === 'profile' ? 'active' : ''}" onclick="setTab('profile')">👤 Profile</button>
         `;
       }
 
-      // Main Content
       const main = document.getElementById('mainContainer');
 
       if (currentRole === 'patient') {
@@ -286,8 +218,8 @@
 
             <div class="grid-4" style="margin-bottom:2rem;">
               <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Total Appointments</span><h3 style="font-size:2rem; color:var(--cyan);">${appointments.length}</h3></div>
-              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Pending</span><h3 style="font-size:2rem; color:var(--amber);">${appointments.filter(a=>a.status==='PENDING').length}</h3></div>
-              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Accepted</span><h3 style="font-size:2rem; color:var(--emerald);">${appointments.filter(a=>a.status==='ACCEPTED').length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Pending</span><h3 style="font-size:2rem; color:var(--amber);">${appointments.filter(a => a.status === 'PENDING').length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Accepted</span><h3 style="font-size:2rem; color:var(--emerald);">${appointments.filter(a => a.status === 'ACCEPTED').length}</h3></div>
               <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Reports</span><h3 style="font-size:2rem; color:var(--primary);">${reports.length}</h3></div>
             </div>
 
@@ -384,7 +316,6 @@
           `;
         }
       } else {
-        // DOCTOR ROLE
         if (currentTab === 'dashboard') {
           main.innerHTML = `
             <h2>Doctor Workstation Dashboard</h2>
@@ -392,8 +323,8 @@
 
             <div class="grid-4" style="margin-bottom:2rem;">
               <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Today's Appointments</span><h3 style="font-size:2rem; color:var(--cyan);">${appointments.length}</h3></div>
-              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Pending Requests</span><h3 style="font-size:2rem; color:var(--amber);">${appointments.filter(a=>a.status==='PENDING').length}</h3></div>
-              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Available Slots</span><h3 style="font-size:2rem; color:var(--emerald);">${doctorSlots.filter(s=>s.status==='Available').length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Pending Requests</span><h3 style="font-size:2rem; color:var(--amber);">${appointments.filter(a => a.status === 'PENDING').length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Available Slots</span><h3 style="font-size:2rem; color:var(--emerald);">${doctorSlots.filter(s => s.status === 'Available').length}</h3></div>
               <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Total Patients</span><h3 style="font-size:2rem; color:var(--primary);">2</h3></div>
             </div>
           `;
@@ -424,9 +355,9 @@
                   ${doctorSlots.map(s => `
                     <tr>
                       <td><strong>${s.time}</strong></td>
-                      <td><span class="badge ${s.status==='Available'?'badge-accepted':'badge-rejected'}">${s.status}</span></td>
+                      <td><span class="badge ${s.status === 'Available' ? 'badge-accepted' : 'badge-rejected'}">${s.status}</span></td>
                       <td>
-                        ${s.status==='Available' ? `<button onclick="handleDeleteSlot('${s.id}')" class="btn-danger">Delete Slot</button>` : `<span style="font-size:0.8rem; color:var(--text-dim);">Disabled (Booked)</span>`}
+                        ${s.status === 'Available' ? `<button onclick="handleDeleteSlot('${s.id}')" class="btn-danger">Delete Slot</button>` : `<span style="font-size:0.8rem; color:var(--text-dim);">Disabled (Booked)</span>`}
                       </td>
                     </tr>
                   `).join('')}
@@ -497,4 +428,5 @@
     render();
   </script>
 </body>
+
 </html>

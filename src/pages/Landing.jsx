@@ -38,7 +38,6 @@ export default function Landing({ currentUser }) {
 
   return (
     <div>
-      {/* Hero Section */}
       <div className="landing-hero">
         <h1>Doctor-Patient Appointment Management System</h1>
         <p>
@@ -54,7 +53,6 @@ export default function Landing({ currentUser }) {
         </div>
       </div>
 
-      {/* Core Features */}
       <div className="landing-features">
         <h2 className="section-heading">Key Features</h2>
         <div className="feature-grid">
@@ -79,7 +77,6 @@ export default function Landing({ currentUser }) {
           </div>
         </div>
 
-        {/* Roles Section */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginTop: '40px' }}>
           <div className="card" style={{ textAlign: 'center' }}>
             <h3 style={{ color: '#0077b6', marginBottom: '10px' }}>Patient Portal</h3>
@@ -103,7 +100,6 @@ export default function Landing({ currentUser }) {
         </div>
       </div>
 
-      {/* Simple Footer */}
       <footer className="footer">
         <p>© 2026 MediConnect — Doctor-Patient Appointment Management System</p>
       </footer>

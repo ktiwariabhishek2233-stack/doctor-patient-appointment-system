@@ -11,16 +11,13 @@ export default function Patient({
   setMedicalReports,
   doctors = initialDoctors
 }) {
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'doctors' | 'appointments' | 'reports' | 'profile'
+  const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Search & Filter
   const [searchDoctor, setSearchDoctor] = useState('');
   const [selectedSpec, setSelectedSpec] = useState('All');
 
-  // Doctor Details Modal State
   const [viewingDoctor, setViewingDoctor] = useState(null);
 
-  // Booking Modal State
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingDoctor, setBookingDoctor] = useState(null);
   const [appointmentDate, setAppointmentDate] = useState('2026-08-28');
@@ -28,17 +25,14 @@ export default function Patient({
   const [visitReason, setVisitReason] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState(false);
 
-  // Appointments Filter
-  const [appointmentFilter, setAppointmentFilter] = useState('All'); // 'All' | 'Upcoming' | 'Past'
+  const [appointmentFilter, setAppointmentFilter] = useState('All');
 
-  // Medical Reports State
   const [reportTitle, setReportTitle] = useState('');
   const [reportType, setReportType] = useState('PDF');
   const [reportDesc, setReportDesc] = useState('');
   const [reportFile, setReportFile] = useState(null);
   const [reportSuccess, setReportSuccess] = useState(false);
 
-  // Patient Profile State
   const [profileName, setProfileName] = useState(currentUser?.name || 'Alex Morgan');
   const [profileEmail, setProfileEmail] = useState(currentUser?.email || 'alex@example.com');
   const [profileAge, setProfileAge] = useState(currentUser?.age || 30);
@@ -46,7 +40,6 @@ export default function Patient({
   const [profileAddress, setProfileAddress] = useState(currentUser?.address || '123 Main Street, Cityville');
   const [profileSaved, setProfileSaved] = useState(false);
 
-  // Filter Doctors
   const filteredDoctors = doctors.filter(doc => {
     const matchesName = doc.name.toLowerCase().includes(searchDoctor.toLowerCase()) ||
                         doc.specialization.toLowerCase().includes(searchDoctor.toLowerCase());
@@ -54,7 +47,6 @@ export default function Patient({
     return matchesName && matchesSpec;
   });
 
-  // Filter Patient Appointments
   const patientApts = appointments.filter(
     a => !currentUser?.email || a.patientEmail === currentUser?.email || a.patientName === currentUser?.name
   );
@@ -66,18 +58,15 @@ export default function Patient({
     return true;
   });
 
-  // Calculate Statistics
   const totalCount = patientApts.length;
   const pendingCount = patientApts.filter(a => a.status === 'PENDING').length;
   const acceptedCount = patientApts.filter(a => a.status === 'ACCEPTED').length;
   const completedCount = patientApts.filter(a => a.status === 'COMPLETED').length;
 
-  // Open Doctor Details Modal
   const handleOpenDetails = (doc) => {
     setViewingDoctor(doc);
   };
 
-  // Open Booking Modal
   const handleOpenBooking = (doc) => {
     setBookingDoctor(doc);
     const firstAvailable = doc.slots?.find(s => s.status === 'Available');
@@ -86,7 +75,6 @@ export default function Patient({
     setShowBookingModal(true);
   };
 
-  // Confirm Appointment Booking
   const handleConfirmBooking = (e) => {
     e.preventDefault();
     if (!bookingDoctor) return;
@@ -118,7 +106,6 @@ export default function Patient({
     }, 1300);
   };
 
-  // Upload Medical Report
   const handleUploadReport = (e) => {
     e.preventDefault();
     if (!reportTitle) return;
@@ -140,7 +127,6 @@ export default function Patient({
     setTimeout(() => setReportSuccess(false), 2500);
   };
 
-  // Save Patient Profile
   const handleSaveProfile = (e) => {
     e.preventDefault();
     if (setCurrentUser) {
@@ -159,7 +145,6 @@ export default function Patient({
 
   return (
     <div className="dashboard-layout">
-      {/* Sidebar */}
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -167,17 +152,14 @@ export default function Patient({
         setCurrentUser={setCurrentUser} 
       />
 
-      {/* Main Content Area */}
       <div className="main-content">
         <div className="page-title">
           <h2>Patient Dashboard</h2>
           <p>Welcome, {currentUser?.name || 'Alex Morgan'} | Manage appointments and medical records</p>
         </div>
 
-        {/* 1. DASHBOARD OVERVIEW */}
         {activeTab === 'dashboard' && (
           <div>
-            {/* Stat Counters */}
             <div className="grid-cards">
               <div className="stat-box">
                 <p>Total Appointments</p>
@@ -197,7 +179,6 @@ export default function Patient({
               </div>
             </div>
 
-            {/* Quick Actions */}
             <div className="card">
               <h3 style={{ color: '#0077b6', marginBottom: '15px' }}>Quick Actions</h3>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -215,10 +196,8 @@ export default function Patient({
           </div>
         )}
 
-        {/* 2. FIND DOCTORS */}
         {activeTab === 'doctors' && (
           <div>
-            {/* Search and Filter Form */}
             <div className="card">
               <div className="form-row">
                 <div className="form-group">
@@ -246,7 +225,6 @@ export default function Patient({
               </div>
             </div>
 
-            {/* Doctor Cards */}
             <div className="doctor-grid">
               {filteredDoctors.map((doc) => (
                 <div key={doc.id} className="doctor-item-card">
@@ -300,13 +278,11 @@ export default function Patient({
           </div>
         )}
 
-        {/* 3. MY APPOINTMENTS */}
         {activeTab === 'appointments' && (
           <div className="card table-responsive">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
               <h3 style={{ color: '#0077b6' }}>My Appointments</h3>
               
-              {/* Filter Tabs: All, Upcoming, Past */}
               <div style={{ display: 'flex', gap: '8px' }}>
                 {['All', 'Upcoming', 'Past'].map((f) => (
                   <button
@@ -360,10 +336,8 @@ export default function Patient({
           </div>
         )}
 
-        {/* 4. MEDICAL REPORTS */}
         {activeTab === 'reports' && (
           <div>
-            {/* Upload Form */}
             <div className="card" style={{ maxWidth: '550px' }}>
               <h3 style={{ color: '#0077b6', marginBottom: '12px' }}>Medical Reports</h3>
               <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '15px' }}>
@@ -422,7 +396,6 @@ export default function Patient({
               </form>
             </div>
 
-            {/* Reports List */}
             <div className="card table-responsive">
               <h3 style={{ color: '#0077b6', marginBottom: '15px' }}>Uploaded Medical Reports</h3>
               <table className="data-table">
@@ -458,7 +431,6 @@ export default function Patient({
           </div>
         )}
 
-        {/* 5. PATIENT PROFILE */}
         {activeTab === 'profile' && (
           <div className="card" style={{ maxWidth: '550px' }}>
             <h3 style={{ color: '#0077b6', marginBottom: '15px' }}>Patient Profile</h3>
@@ -528,7 +500,6 @@ export default function Patient({
           </div>
         )}
 
-        {/* DOCTOR DETAILS MODAL */}
         {viewingDoctor && (
           <div className="modal-backdrop">
             <div className="modal-card">
@@ -578,7 +549,6 @@ export default function Patient({
           </div>
         )}
 
-        {/* BOOK APPOINTMENT MODAL */}
         {showBookingModal && (
           <div className="modal-backdrop">
             <div className="modal-card">
@@ -648,7 +618,6 @@ export default function Patient({
                     />
                   </div>
 
-                  {/* Summary */}
                   <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '4px', border: '1px solid #e2e8f0', marginBottom: '15px', fontSize: '0.85rem' }}>
                     <strong>Booking Summary:</strong><br />
                     Doctor: {bookingDoctor?.name} | Date: {appointmentDate} | Time: {appointmentTime}

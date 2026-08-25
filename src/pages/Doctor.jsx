@@ -10,9 +10,8 @@ export default function Doctor({
   medicalReports = initialMedicalReports,
   initialTab = 'dashboard'
 }) {
-  const [activeTab, setActiveTab] = useState(initialTab); // 'dashboard' | 'slots' | 'requests' | 'reports' | 'profile'
+  const [activeTab, setActiveTab] = useState(initialTab);
 
-  // Manage Slots State
   const [slotDate, setSlotDate] = useState('2026-08-28');
   const [slotTime, setSlotTime] = useState('09:00 AM');
   const [slotsList, setSlotsList] = useState([
@@ -24,7 +23,6 @@ export default function Doctor({
   ]);
   const [slotNotice, setSlotNotice] = useState('');
 
-  // Doctor Profile State
   const [docName, setDocName] = useState(currentUser?.name || 'Dr. Sarah Jenkins');
   const [docEmail, setDocEmail] = useState(currentUser?.email || 'sarah@mediconnect.org');
   const [docSpec, setDocSpec] = useState(currentUser?.specialization || 'Cardiologist');
@@ -35,30 +33,25 @@ export default function Doctor({
   );
   const [profileSaved, setProfileSaved] = useState(false);
 
-  // Selected Patient Details Modal State
   const [selectedPatient, setSelectedPatient] = useState(null);
 
-  // Statistics
   const totalAppointmentsCount = appointments.length;
   const pendingRequestsCount = appointments.filter(a => a.status === 'PENDING').length;
   const availableSlotsCount = slotsList.filter(s => s.status === 'Available').length;
   const totalPatientsCount = new Set(appointments.map(a => a.patientName)).size;
 
-  // Accept Appointment (PENDING -> ACCEPTED)
   const handleAcceptAppointment = (aptId) => {
     setAppointments(appointments.map(a => 
       a.id === aptId ? { ...a, status: 'ACCEPTED' } : a
     ));
   };
 
-  // Reject Appointment (PENDING -> REJECTED)
   const handleRejectAppointment = (aptId) => {
     setAppointments(appointments.map(a => 
       a.id === aptId ? { ...a, status: 'REJECTED' } : a
     ));
   };
 
-  // Add Time Slot
   const handleAddSlot = (e) => {
     e.preventDefault();
     if (slotsList.some(s => s.time === slotTime)) {
@@ -78,14 +71,12 @@ export default function Doctor({
     setTimeout(() => setSlotNotice(''), 2000);
   };
 
-  // Delete Available Slot (Booked slots cannot be deleted)
   const handleDeleteSlot = (id) => {
     const slot = slotsList.find(s => s.id === id);
     if (slot?.status === 'Booked') return;
     setSlotsList(slotsList.filter(s => s.id !== id));
   };
 
-  // Save Doctor Profile
   const handleSaveProfile = (e) => {
     e.preventDefault();
     if (setCurrentUser) {
@@ -105,7 +96,6 @@ export default function Doctor({
 
   return (
     <div className="dashboard-layout">
-      {/* Sidebar */}
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -113,17 +103,14 @@ export default function Doctor({
         setCurrentUser={setCurrentUser} 
       />
 
-      {/* Main Content */}
       <div className="main-content">
         <div className="page-title">
           <h2>Doctor Dashboard</h2>
           <p>Welcome, {docName} | {docSpec} Specialist</p>
         </div>
 
-        {/* 1. DASHBOARD OVERVIEW */}
         {activeTab === 'dashboard' && (
           <div>
-            {/* Stat Boxes */}
             <div className="grid-cards">
               <div className="stat-box">
                 <p>Today's Appointments</p>
@@ -143,7 +130,6 @@ export default function Doctor({
               </div>
             </div>
 
-            {/* Quick Actions */}
             <div className="card">
               <h3 style={{ color: '#0077b6', marginBottom: '15px' }}>Doctor Actions</h3>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -161,10 +147,8 @@ export default function Doctor({
           </div>
         )}
 
-        {/* 2. MANAGE SLOTS */}
         {activeTab === 'slots' && (
           <div>
-            {/* Add Slot Form */}
             <div className="card" style={{ maxWidth: '550px' }}>
               <h3 style={{ color: '#0077b6', marginBottom: '12px' }}>Manage Available Slots</h3>
               <p style={{ color: '#64748b', fontSize: '0.88rem', marginBottom: '15px' }}>
@@ -212,7 +196,6 @@ export default function Doctor({
               </form>
             </div>
 
-            {/* Slots List Table */}
             <div className="card table-responsive">
               <h3 style={{ color: '#0077b6', marginBottom: '15px' }}>Available & Booked Slots</h3>
               <table className="data-table">
@@ -255,7 +238,6 @@ export default function Doctor({
           </div>
         )}
 
-        {/* 3. APPOINTMENT REQUESTS & HISTORY */}
         {activeTab === 'requests' && (
           <div className="card table-responsive">
             <h3 style={{ color: '#0077b6', marginBottom: '15px' }}>Appointment Requests & History</h3>
@@ -330,7 +312,6 @@ export default function Doctor({
           </div>
         )}
 
-        {/* 4. PATIENT MEDICAL REPORTS */}
         {activeTab === 'reports' && (
           <div className="card table-responsive">
             <h3 style={{ color: '#0077b6', marginBottom: '15px' }}>Patient Medical Reports</h3>
@@ -367,7 +348,6 @@ export default function Doctor({
           </div>
         )}
 
-        {/* 5. DOCTOR PROFILE */}
         {activeTab === 'profile' && (
           <div className="card" style={{ maxWidth: '550px' }}>
             <h3 style={{ color: '#0077b6', marginBottom: '15px' }}>Doctor Profile</h3>
@@ -447,7 +427,6 @@ export default function Doctor({
           </div>
         )}
 
-        {/* PATIENT INFORMATION MODAL */}
         {selectedPatient && (
           <div className="modal-backdrop">
             <div className="modal-card">

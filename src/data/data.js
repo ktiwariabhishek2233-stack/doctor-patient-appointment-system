@@ -1,5 +1,3 @@
-// Simple dummy data for Doctor-Patient Appointment Management System
-
 export const initialDoctors = [
   {
     id: "doc-1",

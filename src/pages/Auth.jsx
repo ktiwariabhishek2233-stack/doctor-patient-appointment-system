@@ -7,20 +7,17 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
   const location = useLocation();
 
   const [isLogin, setIsLogin] = useState(location.state?.mode === 'register' ? false : true);
-  const [role, setRole] = useState(location.state?.role || 'patient'); // 'patient' | 'doctor'
+  const [role, setRole] = useState(location.state?.role || 'patient');
 
-  // Shared Fields
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Patient Fields
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('Male');
   const [address, setAddress] = useState('');
 
-  // Doctor Fields
   const [specialization, setSpecialization] = useState('Cardiologist');
   const [qualification, setQualification] = useState('');
   const [experience, setExperience] = useState('');
@@ -29,7 +26,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
   const [successMessage, setSuccessMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState(location.state?.message || '');
 
-  // Helper to load or initialize registered users from localStorage
   const getRegisteredUsers = () => {
     const saved = localStorage.getItem('mediconnect_registered_users');
     if (saved) {
@@ -43,7 +39,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
     return initialUsers;
   };
 
-  // Update role/mode if location state changes
   useEffect(() => {
     if (location.state?.role) {
       setRole(location.state.role);
@@ -63,7 +58,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // Common Validation
     if (!cleanEmail || !password) {
       setError('Please fill in all required fields.');
       return;
@@ -72,7 +66,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
     const registeredUsers = getRegisteredUsers();
 
     if (!isLogin) {
-      // Registration Validations
       if (!fullName.trim()) {
         setError('Please enter your full name.');
         return;
@@ -86,7 +79,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
         return;
       }
 
-      // Check if email already registered across system
       const emailExistsInUsers = registeredUsers.some(
         u => u.email && u.email.trim().toLowerCase() === cleanEmail
       );
@@ -114,7 +106,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
           return;
         }
 
-        // Create new patient
         const newPatient = {
           id: 'pat-' + Date.now(),
           name: fullName.trim(),
@@ -127,16 +118,13 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
           phone: '555-0199'
         };
 
-        // Save to registered users
         const updatedUsers = [...registeredUsers, newPatient];
         localStorage.setItem('mediconnect_registered_users', JSON.stringify(updatedUsers));
 
-        // Set current session user
         setCurrentUser(newPatient);
         localStorage.setItem('mediconnect_user', JSON.stringify(newPatient));
         navigate('/patient');
       } else {
-        // Doctor Registration
         if (!qualification.trim()) {
           setError('Please enter your medical qualification (e.g. MBBS, MD).');
           return;
@@ -162,11 +150,9 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
           about: `Specialist in ${specialization} with ${expStr} experience.`
         };
 
-        // Save to registered users
         const updatedUsers = [...registeredUsers, newDoctor];
         localStorage.setItem('mediconnect_registered_users', JSON.stringify(updatedUsers));
 
-        // Add to active doctors list so patients can book appointments with new doctor
         if (setDoctors) {
           const doctorEntry = {
             id: newDocId,
@@ -186,19 +172,16 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
           setDoctors(prev => [...prev, doctorEntry]);
         }
 
-        // Set current session user
         setCurrentUser(newDoctor);
         localStorage.setItem('mediconnect_user', JSON.stringify(newDoctor));
         navigate('/doctor');
       }
     } else {
-      // Login Flow
       const matchedUser = registeredUsers.find(
         u => u.email && u.email.trim().toLowerCase() === cleanEmail
       );
 
       if (!matchedUser) {
-        // Check if demo doctor/patient matched by email
         const doctorMatch = (doctors || initialDoctors).find(
           d => d.email && d.email.trim().toLowerCase() === cleanEmail
         );
@@ -232,62 +215,25 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
         return;
       }
 
-      // Check role mismatch
       if (matchedUser.role !== role) {
         setError(`This email is registered as a ${matchedUser.role === 'doctor' ? 'Doctor' : 'Patient'}. Please select "${matchedUser.role === 'doctor' ? 'Doctor' : 'Patient'}" above to log in.`);
         return;
       }
 
-      // Check password if set
       if (matchedUser.password && matchedUser.password !== password) {
         setError('Incorrect password. Please try again.');
         return;
       }
 
-      // Log in
       setCurrentUser(matchedUser);
       localStorage.setItem('mediconnect_user', JSON.stringify(matchedUser));
       navigate(matchedUser.role === 'doctor' ? '/doctor' : '/patient');
     }
   };
 
-  // Quick Demo Logins
-  const handleQuickDemo = (demoRole) => {
-    setError('');
-    if (demoRole === 'patient') {
-      const user = {
-        id: 'pat-1',
-        name: 'Alex Morgan',
-        role: 'patient',
-        email: 'alex@example.com',
-        age: 30,
-        gender: 'Female',
-        address: '123 Main Street, Cityville',
-        phone: '555-0199'
-      };
-      setCurrentUser(user);
-      localStorage.setItem('mediconnect_user', JSON.stringify(user));
-      navigate('/patient');
-    } else {
-      const user = {
-        id: 'doc-1',
-        name: 'Dr. Sarah Jenkins',
-        role: 'doctor',
-        email: 'sarah@mediconnect.org',
-        specialization: 'Cardiologist',
-        qualification: 'MBBS, MD (Cardiology)',
-        experience: '10 Years'
-      };
-      setCurrentUser(user);
-      localStorage.setItem('mediconnect_user', JSON.stringify(user));
-      navigate('/doctor');
-    }
-  };
-
   return (
     <div className="auth-wrapper">
       <div className="auth-box">
-        {/* Toggle Login/Register */}
         <div className="auth-tabs">
           <button 
             type="button" 
@@ -350,7 +296,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Select Role */}
           <div className="form-group">
             <label>I am a:</label>
             <div className="role-radio-group">
@@ -377,7 +322,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
             </div>
           </div>
 
-          {/* Full Name for Registration */}
           {!isLogin && (
             <div className="form-group">
               <label>Full Name:</label>
@@ -391,7 +335,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
             </div>
           )}
 
-          {/* Email */}
           <div className="form-group">
             <label>Email Address:</label>
             <input 
@@ -403,7 +346,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
             />
           </div>
 
-          {/* Password */}
           <div className="form-group">
             <label>Password:</label>
             <input 
@@ -415,7 +357,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
             />
           </div>
 
-          {/* Confirm Password for Registration */}
           {!isLogin && (
             <div className="form-group">
               <label>Confirm Password:</label>
@@ -429,7 +370,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
             </div>
           )}
 
-          {/* Patient Specific Fields */}
           {!isLogin && role === 'patient' && (
             <>
               <div className="form-row">
@@ -468,7 +408,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
             </>
           )}
 
-          {/* Doctor Specific Fields */}
           {!isLogin && role === 'doctor' && (
             <>
               <div className="form-group">
@@ -512,31 +451,6 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
             {isLogin ? `Login as ${role === 'doctor' ? 'Doctor' : 'Patient'}` : `Register as ${role === 'doctor' ? 'Doctor' : 'Patient'}`}
           </button>
         </form>
-
-        {/* Quick Demo Login */}
-        <div style={{ marginTop: '25px', paddingTop: '15px', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '10px' }}>
-            Quick Demo Accounts:
-          </p>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-            <button 
-              type="button" 
-              onClick={() => handleQuickDemo('patient')} 
-              className="btn-secondary btn-sm"
-              title="Login as Alex Morgan (Patient)"
-            >
-              Demo Patient (alex@example.com)
-            </button>
-            <button 
-              type="button" 
-              onClick={() => handleQuickDemo('doctor')} 
-              className="btn-secondary btn-sm"
-              title="Login as Dr. Sarah Jenkins (Doctor)"
-            >
-              Demo Doctor (sarah@mediconnect.org)
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
