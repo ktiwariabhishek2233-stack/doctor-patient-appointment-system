@@ -31,12 +31,17 @@ const seedSupabaseData = async () => {
     const hashedPassword = await bcrypt.hash('password123', salt);
 
     // 2. Create Patient 1: Alex Morgan
-    const { data: uAlex } = await client.from('users').insert([{
+    const { data: uAlex, error: uAlexError } = await client.from('users').insert([{
       name: 'Alex Morgan',
       email: 'alex@example.com',
       password: hashedPassword,
       role: 'patient'
     }]).select().single();
+
+    if (uAlexError) {
+      console.error('Error inserting user uAlex:', uAlexError);
+      process.exit(1);
+    }
 
     const { data: pAlex } = await client.from('patients').insert([{
       user_id: uAlex.id,

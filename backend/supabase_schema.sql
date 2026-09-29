@@ -206,3 +206,12 @@ CREATE POLICY "Service role full access medical_reports" ON medical_reports FOR 
 
 DROP POLICY IF EXISTS "Service role full access reviews" ON reviews;
 CREATE POLICY "Service role full access reviews" ON reviews FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- ==============================================================================
+-- 7. Grant Table Permissions to Service Role
+-- ==============================================================================
+GRANT USAGE ON SCHEMA public TO service_role, anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
