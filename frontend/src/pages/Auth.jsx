@@ -117,7 +117,7 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
         }
       } catch (err) {
         console.error('Registration failed:', err);
-        setError(err.response?.data?.message || 'Registration failed. Please try again.');
+        setError(err.response?.data?.message || err.message || 'Registration failed. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -135,7 +135,7 @@ export default function Auth({ setCurrentUser, doctors, setDoctors }) {
 
       } catch (err) {
         console.error('Login failed:', err);
-        setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+        setError(err.response?.data?.message || err.message || 'Login failed. Please check your credentials.');
       } finally {
         setLoading(false);
       }
