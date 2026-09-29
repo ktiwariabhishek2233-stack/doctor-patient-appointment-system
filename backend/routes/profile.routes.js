@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { Patient } from '../models/Patient.js';
 import { Doctor } from '../models/Doctor.js';
 import { User } from '../models/User.js';
+import { isSupabaseConfigured } from '../config/supabase.js';
+import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
@@ -11,7 +13,17 @@ const router = express.Router();
 router.put('/patients/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, age, gender, address, phone } = req.body;
+
+    if (isSupabaseConfigured()) {
+      const patient = await supabaseDb.updatePatientProfile(id, req.body);
+      if (!patient) {
+        return res.status(404).json({ message: 'Patient profile not found' });
+      }
+      return res.json({
+        message: 'Patient profile updated successfully',
+        patient
+      });
+    }
 
     let patient = null;
     if (mongoose.Types.ObjectId.isValid(id)) {
@@ -25,6 +37,7 @@ router.put('/patients/:id', async (req, res) => {
       return res.status(404).json({ message: 'Patient profile not found' });
     }
 
+    const { name, email, age, gender, address, phone } = req.body;
     if (name) patient.name = name.trim();
     if (email) patient.email = email.trim().toLowerCase();
     if (age !== undefined) patient.age = Number(age);
@@ -34,7 +47,6 @@ router.put('/patients/:id', async (req, res) => {
 
     await patient.save();
 
-    // Also update parent User name/email if present
     if (patient.user) {
       await User.findByIdAndUpdate(patient.user, {
         ...(name && { name: name.trim() }),
@@ -66,7 +78,17 @@ router.put('/patients/:id', async (req, res) => {
 router.put('/doctors/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, specialization, qualification, experience, about } = req.body;
+
+    if (isSupabaseConfigured()) {
+      const doctor = await supabaseDb.updateDoctorProfile(id, req.body);
+      if (!doctor) {
+        return res.status(404).json({ message: 'Doctor profile not found' });
+      }
+      return res.json({
+        message: 'Doctor profile updated successfully',
+        doctor
+      });
+    }
 
     let doctor = null;
     if (mongoose.Types.ObjectId.isValid(id)) {
@@ -80,6 +102,7 @@ router.put('/doctors/:id', async (req, res) => {
       return res.status(404).json({ message: 'Doctor profile not found' });
     }
 
+    const { name, email, specialization, qualification, experience, about } = req.body;
     if (name) doctor.name = name.trim();
     if (email) doctor.email = email.trim().toLowerCase();
     if (specialization) doctor.specialization = specialization.trim();
@@ -89,7 +112,6 @@ router.put('/doctors/:id', async (req, res) => {
 
     await doctor.save();
 
-    // Also update parent User name/email if present
     if (doctor.user) {
       await User.findByIdAndUpdate(doctor.user, {
         ...(name && { name: name.trim() }),

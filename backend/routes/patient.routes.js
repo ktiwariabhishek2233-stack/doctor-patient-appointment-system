@@ -2,6 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import { Patient } from '../models/Patient.js';
 import { User } from '../models/User.js';
+import { isSupabaseConfigured } from '../config/supabase.js';
+import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
@@ -9,6 +11,11 @@ const router = express.Router();
 // @desc    Get all patients
 router.get('/', async (req, res) => {
   try {
+    if (isSupabaseConfigured()) {
+      const patients = await supabaseDb.getAllPatients();
+      return res.json(patients);
+    }
+
     const patients = await Patient.find().lean();
     return res.json(patients.map(p => ({
       id: p._id.toString(),
@@ -31,8 +38,16 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    let patient = null;
 
+    if (isSupabaseConfigured()) {
+      const patient = await supabaseDb.getPatientById(id);
+      if (!patient) {
+        return res.status(404).json({ message: 'Patient not found' });
+      }
+      return res.json(patient);
+    }
+
+    let patient = null;
     if (mongoose.Types.ObjectId.isValid(id)) {
       patient = await Patient.findById(id);
       if (!patient) {
@@ -65,7 +80,17 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, age, gender, address, phone } = req.body;
+
+    if (isSupabaseConfigured()) {
+      const patient = await supabaseDb.updatePatientProfile(id, req.body);
+      if (!patient) {
+        return res.status(404).json({ message: 'Patient profile not found' });
+      }
+      return res.json({
+        message: 'Patient profile updated successfully',
+        patient
+      });
+    }
 
     let patient = null;
     if (mongoose.Types.ObjectId.isValid(id)) {
@@ -79,6 +104,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Patient profile not found' });
     }
 
+    const { name, email, age, gender, address, phone } = req.body;
     if (name) patient.name = name.trim();
     if (email) patient.email = email.trim().toLowerCase();
     if (age !== undefined) patient.age = Number(age);

@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { Appointment } from '../models/Appointment.js';
 import { AvailableSlot } from '../models/AvailableSlot.js';
 import { Doctor } from '../models/Doctor.js';
+import { isSupabaseConfigured } from '../config/supabase.js';
+import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
@@ -27,6 +29,14 @@ router.post('/', async (req, res) => {
 
     if (!doctorId || !date || !time || !patientEmail) {
       return res.status(400).json({ message: 'Missing required appointment details' });
+    }
+
+    if (isSupabaseConfigured()) {
+      const appointment = await supabaseDb.bookAppointment(req.body);
+      return res.status(201).json({
+        message: 'Appointment booked successfully',
+        appointment
+      });
     }
 
     // Resolve doctor
@@ -71,7 +81,6 @@ router.post('/', async (req, res) => {
       slot.status = 'Booked';
       await slot.save();
     } else {
-      // create booked slot for this doctor
       await AvailableSlot.create({
         doctorId: actualDoctorId,
         time: time.trim(),
@@ -120,14 +129,19 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error booking appointment:', error);
-    return res.status(500).json({ message: error.message || 'Failed to book appointment' });
+    return res.status(error.statusCode || 500).json({ message: error.message || 'Failed to book appointment' });
   }
 });
 
 // @route   GET /api/appointments
-// @desc    Get appointments with optional filters (patientId, doctorId, patientEmail)
+// @desc    Get appointments with optional filters
 router.get('/', async (req, res) => {
   try {
+    if (isSupabaseConfigured()) {
+      const appointments = await supabaseDb.getAppointments(req.query);
+      return res.json(appointments);
+    }
+
     const { patientId, doctorId, patientEmail, status } = req.query;
     const filter = {};
 
@@ -141,7 +155,6 @@ router.get('/', async (req, res) => {
       if (mongoose.Types.ObjectId.isValid(doctorId)) {
         filter.doctorId = doctorId;
       } else {
-        // Find doctor by user ID or name
         const doc = await Doctor.findOne({
           $or: [
             { user: mongoose.Types.ObjectId.isValid(doctorId) ? doctorId : undefined },
@@ -190,13 +203,24 @@ router.patch('/:id', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid appointment ID' });
-    }
-
     const validStatuses = ['PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED'];
     if (!validStatuses.includes(status?.toUpperCase())) {
       return res.status(400).json({ message: `Status must be one of: ${validStatuses.join(', ')}` });
+    }
+
+    if (isSupabaseConfigured()) {
+      const appointment = await supabaseDb.updateAppointmentStatus(id, status);
+      if (!appointment) {
+        return res.status(404).json({ message: 'Appointment not found' });
+      }
+      return res.json({
+        message: `Appointment ${appointment.status.toLowerCase()} successfully`,
+        appointment
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid appointment ID' });
     }
 
     const appointment = await Appointment.findById(id);
@@ -207,7 +231,6 @@ router.patch('/:id', async (req, res) => {
     appointment.status = status.toUpperCase();
     await appointment.save();
 
-    // If REJECTED, release the slot so others can book it
     if (appointment.status === 'REJECTED') {
       await AvailableSlot.findOneAndUpdate(
         {

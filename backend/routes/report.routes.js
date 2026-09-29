@@ -1,7 +1,10 @@
 import express from 'express';
 import mongoose from 'mongoose';
+import fs from 'fs';
 import { MedicalReport } from '../models/MedicalReport.js';
 import { upload } from '../middleware/upload.js';
+import { isSupabaseConfigured } from '../config/supabase.js';
+import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
@@ -22,6 +25,49 @@ router.post('/', (req, res) => {
 
       const finalFileName = fileName || (req.file ? req.file.originalname : 'Medical_Report.pdf');
 
+      // --- SUPABASE STORAGE PATH (Private Bucket + Signed URL) ---
+      if (isSupabaseConfigured()) {
+        let storagePath = '';
+        let fileUrl = '';
+
+        if (req.file && fs.existsSync(req.file.path)) {
+          const fileBuffer = fs.readFileSync(req.file.path);
+          const uploadRes = await supabaseDb.uploadReportToPrivateStorage(
+            fileBuffer,
+            req.file.originalname,
+            req.file.mimetype,
+            patientEmail || 'patient'
+          );
+          storagePath = uploadRes.storagePath;
+          fileUrl = uploadRes.signedUrl;
+
+          // Clean up local temp file
+          try {
+            fs.unlinkSync(req.file.path);
+          } catch (e) {
+            // ignore unlink errors
+          }
+        }
+
+        const report = await supabaseDb.createMedicalReportRecord({
+          patientName: patientName || 'Patient',
+          patientEmail: patientEmail ? patientEmail.trim().toLowerCase() : '',
+          patientId: patientId || null,
+          fileName: finalFileName,
+          fileType: detectedExt,
+          uploadDate: new Date().toISOString().split('T')[0],
+          description: description || `Uploaded ${detectedExt} medical report.`,
+          filePath: storagePath,
+          fileUrl: fileUrl
+        });
+
+        return res.status(201).json({
+          message: 'Medical report uploaded successfully',
+          report
+        });
+      }
+
+      // --- MONGO FALLBACK PATH ---
       const report = await MedicalReport.create({
         patientName: patientName || 'Patient',
         patientEmail: patientEmail ? patientEmail.trim().toLowerCase() : '',
@@ -58,6 +104,11 @@ router.post('/', (req, res) => {
 // @desc    Get all medical reports (with optional patient filter)
 router.get('/', async (req, res) => {
   try {
+    if (isSupabaseConfigured()) {
+      const reports = await supabaseDb.getMedicalReports(req.query);
+      return res.json(reports);
+    }
+
     const { patientId, patientEmail, patientName } = req.query;
     const filter = {};
 

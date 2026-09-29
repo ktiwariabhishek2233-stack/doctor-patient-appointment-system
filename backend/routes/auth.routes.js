@@ -4,11 +4,13 @@ import { Doctor } from '../models/Doctor.js';
 import { Patient } from '../models/Patient.js';
 import { AvailableSlot } from '../models/AvailableSlot.js';
 import { generateToken, protect } from '../middleware/auth.js';
+import { isSupabaseConfigured } from '../config/supabase.js';
+import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
-// Helper to assemble full user object for frontend compatibility
-const formatUserResponse = async (user) => {
+// Helper to assemble full user object for frontend compatibility (MongoDB fallback)
+const formatMongoUserResponse = async (user) => {
   let extra = {};
   if (user.role === 'doctor') {
     const doc = await Doctor.findOne({ user: user._id });
@@ -36,6 +38,7 @@ const formatUserResponse = async (user) => {
 
   return {
     id: user._id.toString(),
+    _id: user._id.toString(),
     name: user.name,
     email: user.email,
     role: user.role,
@@ -52,12 +55,10 @@ router.post('/register', async (req, res) => {
       email,
       password,
       role,
-      // Patient specific fields
       age,
       gender,
       address,
       phone,
-      // Doctor specific fields
       specialization,
       qualification,
       experience,
@@ -70,6 +71,39 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
+    // --- SUPABASE PATH ---
+    if (isSupabaseConfigured()) {
+      const existingUser = await supabaseDb.findUserByEmail(cleanEmail);
+      if (existingUser) {
+        return res.status(400).json({
+          message: `The email address "${cleanEmail}" is already registered. Please log in.`
+        });
+      }
+
+      const formattedUser = await supabaseDb.createUserWithProfile({
+        name,
+        email: cleanEmail,
+        password,
+        role,
+        age,
+        gender,
+        address,
+        phone,
+        specialization,
+        qualification,
+        experience,
+        about
+      });
+
+      const token = generateToken(formattedUser.id);
+      return res.status(201).json({
+        message: 'Registration successful',
+        token,
+        user: formattedUser
+      });
+    }
+
+    // --- MONGO FALLBACK PATH ---
     const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return res.status(400).json({
@@ -77,7 +111,6 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // 1. Create User
     const user = await User.create({
       name: name.trim(),
       email: cleanEmail,
@@ -85,7 +118,6 @@ router.post('/register', async (req, res) => {
       role
     });
 
-    // 2. Create role-specific record
     if (role === 'doctor') {
       const docName = name.trim().startsWith('Dr.') ? name.trim() : `Dr. ${name.trim()}`;
       const expStr = experience?.toLowerCase().includes('year') ? experience : `${experience || '1'} Years`;
@@ -100,7 +132,6 @@ router.post('/register', async (req, res) => {
         about: about || `Specialist in ${specialization || 'General Medicine'} with ${expStr} experience.`
       });
 
-      // Create default starter slots for newly registered doctor
       const defaultTimes = ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'];
       await AvailableSlot.insertMany(
         defaultTimes.map(time => ({
@@ -121,7 +152,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const formattedUser = await formatUserResponse(user);
+    const formattedUser = await formatMongoUserResponse(user);
     const token = generateToken(user._id);
 
     return res.status(201).json({
@@ -146,6 +177,37 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
+    // --- SUPABASE PATH ---
+    if (isSupabaseConfigured()) {
+      const user = await supabaseDb.findUserByEmail(cleanEmail);
+      if (!user) {
+        return res.status(404).json({
+          message: `No account found with email "${cleanEmail}". Please check your email or register.`
+        });
+      }
+
+      if (role && user.role !== role) {
+        return res.status(400).json({
+          message: `This email is registered as a ${user.role === 'doctor' ? 'Doctor' : 'Patient'}. Please select "${user.role === 'doctor' ? 'Doctor' : 'Patient'}" to log in.`
+        });
+      }
+
+      const isMatch = await supabaseDb.verifyPassword(password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Incorrect password. Please try again.' });
+      }
+
+      const formattedUser = await supabaseDb.formatUserResponse(user);
+      const token = generateToken(user.id);
+
+      return res.json({
+        message: 'Login successful',
+        token,
+        user: formattedUser
+      });
+    }
+
+    // --- MONGO FALLBACK PATH ---
     const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(404).json({
@@ -164,7 +226,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Incorrect password. Please try again.' });
     }
 
-    const formattedUser = await formatUserResponse(user);
+    const formattedUser = await formatMongoUserResponse(user);
     const token = generateToken(user._id);
 
     return res.json({
@@ -182,7 +244,12 @@ router.post('/login', async (req, res) => {
 // @desc    Get current authenticated user info
 router.get('/me', protect, async (req, res) => {
   try {
-    const formattedUser = await formatUserResponse(req.user);
+    if (isSupabaseConfigured()) {
+      const formattedUser = await supabaseDb.formatUserResponse(req.user);
+      return res.json({ user: formattedUser });
+    }
+
+    const formattedUser = await formatMongoUserResponse(req.user);
     return res.json({ user: formattedUser });
   } catch (error) {
     console.error('Error fetching current user:', error);

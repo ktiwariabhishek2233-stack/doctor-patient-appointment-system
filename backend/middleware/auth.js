@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
+import { isSupabaseConfigured } from '../config/supabase.js';
+import * as supabaseDb from '../services/supabaseDb.js';
 
 export const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET || 'mediconnect_secret_key', {
@@ -14,7 +16,13 @@ export const protect = async (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'mediconnect_secret_key');
-      req.user = await User.findById(decoded.id).select('-password');
+
+      if (isSupabaseConfigured()) {
+        req.user = await supabaseDb.findUserById(decoded.id);
+      } else {
+        req.user = await User.findById(decoded.id).select('-password');
+      }
+
       if (!req.user) {
         return res.status(401).json({ message: 'User not found with this token' });
       }
