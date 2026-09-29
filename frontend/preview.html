@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediConnect | Doctor-Patient Appointment Management System</title>
+  <link rel="stylesheet" href="./preview.css" />
+</head>
+
+<body>
+  <header class="nav-header">
+    <div class="brand">
+      <div class="brand-icon">❤️</div>
+      <span>MediConnect</span>
+    </div>
+
+    <div class="nav-actions">
+      <button id="btnRolePatient" class="btn-primary" onclick="setRole('patient')">Patient Portal</button>
+      <button id="btnRoleDoctor" class="btn-secondary" onclick="setRole('doctor')">Doctor Workstation</button>
+    </div>
+  </header>
+
+  <div class="fa2-banner">
+    <span>🎓 <strong>FA-2 Demonstration Mode:</strong> Test full Patient & Doctor workflows</span>
+    <div class="task-chips">
+      <span class="chip" onclick="setRole('patient'); openBookingModal();">1. Patient: Book Appointment</span>
+      <span class="chip" onclick="setRole('doctor'); setTab('requests');">2. Doctor: ACCEPT / REJECT</span>
+      <span class="chip" onclick="setRole('doctor'); setTab('slots');">3. Doctor: Manage Slots</span>
+      <span class="chip" onclick="setRole('patient'); setTab('reports');">4. Patient: Upload Report</span>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <aside class="sidebar" id="sidebarContainer"></aside>
+    <main class="main-content" id="mainContainer"></main>
+  </div>
+
+  <div id="modalContainer" style="display: none;"></div>
+  <div id="toastContainer" style="display: none;" class="toast"></div>
+
+  <script>
+    let currentRole = 'patient';
+    let currentTab = 'dashboard';
+
+    let doctors = [
+      { id: 'doc-1', name: 'Dr. Sarah Jenkins', spec: 'Cardiology', qual: 'MD, DM (Cardiology)', exp: '12 Years', avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=200&q=80', slots: [{ time: '09:00 AM', status: 'Available' }, { time: '10:00 AM', status: 'Available' }, { time: '11:00 AM', status: 'Booked' }] },
+      { id: 'doc-2', name: 'Dr. Marcus Vance', spec: 'Neurology', qual: 'MBBS, MD', exp: '15 Years', avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&w=200&q=80', slots: [{ time: '09:30 AM', status: 'Available' }, { time: '01:30 PM', status: 'Booked' }] }
+    ];
+
+    let appointments = [
+      { id: 'apt-101', patName: 'Alex Morgan', docName: 'Dr. Sarah Jenkins', spec: 'Cardiology', date: '2026-08-25', time: '11:00 AM', reason: 'Routine cardiovascular checkup', status: 'ACCEPTED' },
+      { id: 'apt-102', patName: 'Robert Sterling', docName: 'Dr. Sarah Jenkins', spec: 'Cardiology', date: '2026-08-26', time: '02:00 PM', reason: 'Elevated blood pressure', status: 'PENDING' }
+    ];
+
+    let reports = [
+      { id: 'rep-1', patName: 'Alex Morgan', fileName: 'Blood_Test_Panel.pdf', fileType: 'PDF', date: '2026-08-15' },
+      { id: 'rep-2', patName: 'Alex Morgan', fileName: 'ECG_Scan.jpg', fileType: 'JPG', date: '2026-08-18' }
+    ];
+
+    let doctorSlots = [
+      { id: 's1', time: '09:00 AM', status: 'Available' },
+      { id: 's2', time: '10:00 AM', status: 'Available' },
+      { id: 's3', time: '11:00 AM', status: 'Booked' }
+    ];
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      container.innerHTML = `<span>✨</span><span>${msg}</span>`;
+      container.style.display = 'flex';
+      setTimeout(() => { container.style.display = 'none'; }, 3000);
+    }
+
+    function setRole(role) {
+      currentRole = role;
+      currentTab = 'dashboard';
+      document.getElementById('btnRolePatient').className = role === 'patient' ? 'btn-primary' : 'btn-secondary';
+      document.getElementById('btnRoleDoctor').className = role === 'doctor' ? 'btn-primary' : 'btn-secondary';
+      render();
+    }
+
+    function setTab(tab) {
+      currentTab = tab;
+      render();
+    }
+
+    function updateAptStatus(id, newStatus) {
+      appointments = appointments.map(a => a.id === id ? { ...a, status: newStatus } : a);
+      showToast(`Appointment status changed to ${newStatus}`);
+      render();
+    }
+
+    function openBookingModal(docId) {
+      const doc = doctors.find(d => d.id === docId) || doctors[0];
+      const modal = document.getElementById('modalContainer');
+      modal.style.display = 'flex';
+      modal.innerHTML = `
+        <div class="modal-overlay">
+          <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+              <h3>Book Appointment</h3>
+              <button onclick="closeModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer;">✕</button>
+            </div>
+            <form onsubmit="handleBookingForm(event, '${doc.id}')">
+              <div style="margin-bottom:1rem;">
+                <label style="font-size:0.85rem;">Doctor</label>
+                <input class="input-field" value="${doc.name} (${doc.spec})" readonly />
+              </div>
+              <div style="margin-bottom:1rem;">
+                <label style="font-size:0.85rem;">Date</label>
+                <input type="date" id="bookDateInput" class="input-field" value="2026-08-27" required />
+              </div>
+              <div style="margin-bottom:1rem;">
+                <label style="font-size:0.85rem;">Time Slot</label>
+                <select id="bookTimeSelect">
+                  ${doc.slots.map(s => `<option value="${s.time}" ${s.status === 'Booked' ? 'disabled' : ''}>${s.time} — ${s.status}</option>`).join('')}
+                </select>
+              </div>
+              <div style="margin-bottom:1rem;">
+                <label style="font-size:0.85rem;">Reason for Visit</label>
+                <textarea id="bookReasonInput" rows="2" class="input-field" placeholder="Health reason..." required></textarea>
+              </div>
+              <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:1rem;">
+                <button type="button" onclick="closeModal()" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Confirm Appointment</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function closeModal() {
+      document.getElementById('modalContainer').style.display = 'none';
+    }
+
+    function handleBookingForm(e, docId) {
+      e.preventDefault();
+      const doc = doctors.find(d => d.id === docId) || doctors[0];
+      const date = document.getElementById('bookDateInput').value;
+      const time = document.getElementById('bookTimeSelect').value;
+      const reason = document.getElementById('bookReasonInput').value;
+
+      const newApt = {
+        id: 'apt-' + Date.now(),
+        patName: 'Alex Morgan',
+        docName: doc.name,
+        spec: doc.spec,
+        date: date,
+        time: time,
+        reason: reason,
+        status: 'PENDING'
+      };
+
+      appointments.unshift(newApt);
+      closeModal();
+      showToast('Appointment booked successfully! Status: PENDING');
+      setTab('appointments');
+    }
+
+    function handleAddSlot(e) {
+      e.preventDefault();
+      const time = document.getElementById('newSlotTimeSelect').value;
+      if (doctorSlots.some(s => s.time === time)) return;
+      doctorSlots.push({ id: 's-' + Date.now(), time: time, status: 'Available' });
+      showToast(`New slot ${time} added!`);
+      render();
+    }
+
+    function handleDeleteSlot(id) {
+      doctorSlots = doctorSlots.filter(s => s.id !== id);
+      showToast('Slot deleted.');
+      render();
+    }
+
+    function handleReportUpload(e) {
+      e.preventDefault();
+      const title = document.getElementById('repTitleInput').value;
+      reports.unshift({
+        id: 'rep-' + Date.now(),
+        patName: 'Alex Morgan',
+        fileName: title || 'Medical_Report.pdf',
+        fileType: 'PDF',
+        date: new Date().toISOString().split('T')[0]
+      });
+      document.getElementById('repTitleInput').value = '';
+      showToast('Medical report uploaded successfully!');
+      render();
+    }
+
+    function render() {
+      const sidebar = document.getElementById('sidebarContainer');
+      if (currentRole === 'patient') {
+        sidebar.innerHTML = `
+          <button class="side-item ${currentTab === 'dashboard' ? 'active' : ''}" onclick="setTab('dashboard')">📊 Dashboard</button>
+          <button class="side-item ${currentTab === 'doctors' ? 'active' : ''}" onclick="setTab('doctors')">🔍 Find Doctors</button>
+          <button class="side-item ${currentTab === 'appointments' ? 'active' : ''}" onclick="setTab('appointments')">📅 My Appointments</button>
+          <button class="side-item ${currentTab === 'reports' ? 'active' : ''}" onclick="setTab('reports')">📁 Medical Reports</button>
+          <button class="side-item ${currentTab === 'profile' ? 'active' : ''}" onclick="setTab('profile')">👤 Profile</button>
+        `;
+      } else {
+        sidebar.innerHTML = `
+          <button class="side-item ${currentTab === 'dashboard' ? 'active' : ''}" onclick="setTab('dashboard')">📊 Dashboard</button>
+          <button class="side-item ${currentTab === 'slots' ? 'active' : ''}" onclick="setTab('slots')">⏰ Manage Slots</button>
+          <button class="side-item ${currentTab === 'requests' ? 'active' : ''}" onclick="setTab('requests')">📋 Appointments</button>
+          <button class="side-item ${currentTab === 'reports' ? 'active' : ''}" onclick="setTab('reports')">📁 Patient Reports</button>
+          <button class="side-item ${currentTab === 'profile' ? 'active' : ''}" onclick="setTab('profile')">👤 Profile</button>
+        `;
+      }
+
+      const main = document.getElementById('mainContainer');
+
+      if (currentRole === 'patient') {
+        if (currentTab === 'dashboard') {
+          main.innerHTML = `
+            <h2>Patient Dashboard</h2>
+            <p style="color:var(--text-muted); margin-bottom:1.5rem;">Welcome, Alex Morgan</p>
+
+            <div class="grid-4" style="margin-bottom:2rem;">
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Total Appointments</span><h3 style="font-size:2rem; color:var(--cyan);">${appointments.length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Pending</span><h3 style="font-size:2rem; color:var(--amber);">${appointments.filter(a => a.status === 'PENDING').length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Accepted</span><h3 style="font-size:2rem; color:var(--emerald);">${appointments.filter(a => a.status === 'ACCEPTED').length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Reports</span><h3 style="font-size:2rem; color:var(--primary);">${reports.length}</h3></div>
+            </div>
+
+            <div class="grid-4">
+              <div onclick="setTab('doctors')" class="card" style="cursor:pointer;"><h3>🔍 Find Doctor</h3><p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Search specialists & view slots</p></div>
+              <div onclick="openBookingModal()" class="card" style="cursor:pointer;"><h3>📅 Book Appointment</h3><p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Schedule slot & reason</p></div>
+              <div onclick="setTab('appointments')" class="card" style="cursor:pointer;"><h3>📋 My Appointments</h3><p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Track ACCEPTED/PENDING</p></div>
+              <div onclick="setTab('reports')" class="card" style="cursor:pointer;"><h3>📁 Medical Reports</h3><p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Upload & view test records</p></div>
+            </div>
+          `;
+        } else if (currentTab === 'doctors') {
+          main.innerHTML = `
+            <h2>Find & Search Doctors</h2>
+            <div class="grid-2" style="margin-top:1rem;">
+              ${doctors.map(d => `
+                <div class="card" style="display:flex; gap:14px; align-items:center;">
+                  <img src="${d.avatar}" style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" />
+                  <div style="flex:1;">
+                    <h3>${d.name}</h3>
+                    <p style="color:var(--cyan); font-weight:600;">${d.spec}</p>
+                    <p style="font-size:0.82rem; color:var(--text-dim);">${d.qual} • ${d.exp}</p>
+                    <button onclick="openBookingModal('${d.id}')" class="btn-primary" style="margin-top:10px;">Book Appointment</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else if (currentTab === 'appointments') {
+          main.innerHTML = `
+            <div class="card">
+              <h3>My Appointment Timeline</h3>
+              <table class="custom-table" style="margin-top:1rem;">
+                <thead>
+                  <tr><th>Doctor</th><th>Specialty</th><th>Date & Time</th><th>Reason</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                  ${appointments.map(a => `
+                    <tr>
+                      <td><strong>${a.docName}</strong></td>
+                      <td style="color:var(--cyan);">${a.spec}</td>
+                      <td>${a.date} at ${a.time}</td>
+                      <td>${a.reason}</td>
+                      <td><span class="badge badge-${a.status.toLowerCase()}">${a.status}</span></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else if (currentTab === 'reports') {
+          main.innerHTML = `
+            <div class="card" style="max-width:500px; margin-bottom:2rem;">
+              <h3>Upload Medical Report</h3>
+              <form onsubmit="handleReportUpload(event)" style="margin-top:1rem;">
+                <div style="margin-bottom:1rem;">
+                  <label style="font-size:0.85rem;">Report Title</label>
+                  <input id="repTitleInput" class="input-field" placeholder="e.g. ECG Scan PDF" required />
+                </div>
+                <div style="margin-bottom:1rem;">
+                  <label style="font-size:0.85rem;">Select File (PDF, JPG, PNG)</label>
+                  <input type="file" accept=".pdf,.jpg,.png" class="input-field" />
+                </div>
+                <button type="submit" class="btn-primary">Upload File</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <h3>Uploaded Medical Records</h3>
+              <table class="custom-table" style="margin-top:1rem;">
+                <thead><tr><th>File Name</th><th>Type</th><th>Upload Date</th><th>Action</th></tr></thead>
+                <tbody>
+                  ${reports.map(r => `
+                    <tr>
+                      <td><strong>${r.fileName}</strong></td>
+                      <td><span class="badge badge-accepted">${r.fileType}</span></td>
+                      <td>${r.date}</td>
+                      <td><button onclick="alert('Viewing ${r.fileName}')" class="btn-secondary" style="padding:4px 8px; font-size:0.8rem;">View</button></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else if (currentTab === 'profile') {
+          main.innerHTML = `
+            <div class="card" style="max-width:500px;">
+              <h3>Patient Profile</h3>
+              <p style="margin-top:1rem;"><strong>Name:</strong> Alex Morgan</p>
+              <p style="margin-top:6px;"><strong>Email:</strong> alex.morgan@example.com</p>
+              <p style="margin-top:6px;"><strong>Age:</strong> 32 Years</p>
+              <p style="margin-top:6px;"><strong>Gender:</strong> Female</p>
+              <p style="margin-top:6px;"><strong>Address:</strong> 742 Evergreen Terrace, Springfield</p>
+            </div>
+          `;
+        }
+      } else {
+        if (currentTab === 'dashboard') {
+          main.innerHTML = `
+            <h2>Doctor Workstation Dashboard</h2>
+            <p style="color:var(--text-muted); margin-bottom:1.5rem;">Welcome, Dr. Sarah Jenkins</p>
+
+            <div class="grid-4" style="margin-bottom:2rem;">
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Today's Appointments</span><h3 style="font-size:2rem; color:var(--cyan);">${appointments.length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Pending Requests</span><h3 style="font-size:2rem; color:var(--amber);">${appointments.filter(a => a.status === 'PENDING').length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Available Slots</span><h3 style="font-size:2rem; color:var(--emerald);">${doctorSlots.filter(s => s.status === 'Available').length}</h3></div>
+              <div class="card"><span style="font-size:0.8rem; color:var(--text-muted);">Total Patients</span><h3 style="font-size:2rem; color:var(--primary);">2</h3></div>
+            </div>
+          `;
+        } else if (currentTab === 'slots') {
+          main.innerHTML = `
+            <div class="card" style="max-width:500px; margin-bottom:2rem;">
+              <h3>Manage Available Slots</h3>
+              <form onsubmit="handleAddSlot(event)" style="margin-top:1rem;">
+                <div style="margin-bottom:1rem;">
+                  <label style="font-size:0.85rem;">Time Slot</label>
+                  <select id="newSlotTimeSelect" class="input-field">
+                    <option value="09:00 AM">09:00 AM</option>
+                    <option value="10:00 AM">10:00 AM</option>
+                    <option value="11:30 AM">11:30 AM</option>
+                    <option value="02:00 PM">02:00 PM</option>
+                    <option value="04:30 PM">04:30 PM</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn-primary">+ Add Available Slot</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <h3>Available Slots List</h3>
+              <table class="custom-table" style="margin-top:1rem;">
+                <thead><tr><th>Time Slot</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                  ${doctorSlots.map(s => `
+                    <tr>
+                      <td><strong>${s.time}</strong></td>
+                      <td><span class="badge ${s.status === 'Available' ? 'badge-accepted' : 'badge-rejected'}">${s.status}</span></td>
+                      <td>
+                        ${s.status === 'Available' ? `<button onclick="handleDeleteSlot('${s.id}')" class="btn-danger">Delete Slot</button>` : `<span style="font-size:0.8rem; color:var(--text-dim);">Disabled (Booked)</span>`}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else if (currentTab === 'requests') {
+          main.innerHTML = `
+            <div class="card">
+              <h3>Appointment Requests & History</h3>
+              <table class="custom-table" style="margin-top:1rem;">
+                <thead><tr><th>Patient Name</th><th>Date & Time</th><th>Reason</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  ${appointments.map(a => `
+                    <tr>
+                      <td><strong>${a.patName}</strong></td>
+                      <td>${a.date} at ${a.time}</td>
+                      <td>${a.reason}</td>
+                      <td><span class="badge badge-${a.status.toLowerCase()}">${a.status}</span></td>
+                      <td>
+                        ${a.status === 'PENDING' ? `
+                          <button onclick="updateAptStatus('${a.id}', 'ACCEPTED')" class="btn-success">ACCEPT</button>
+                          <button onclick="updateAptStatus('${a.id}', 'REJECTED')" class="btn-danger">REJECT</button>
+                        ` : `<span style="font-size:0.8rem; color:var(--text-dim);">Decision Recorded</span>`}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else if (currentTab === 'reports') {
+          main.innerHTML = `
+            <div class="card">
+              <h3>Patient Medical Reports</h3>
+              <table class="custom-table" style="margin-top:1rem;">
+                <thead><tr><th>Patient Name</th><th>Report File</th><th>Type</th><th>Date</th><th>Action</th></tr></thead>
+                <tbody>
+                  ${reports.map(r => `
+                    <tr>
+                      <td><strong>${r.patName}</strong></td>
+                      <td>${r.fileName}</td>
+                      <td><span class="badge badge-accepted">${r.fileType}</span></td>
+                      <td>${r.date}</td>
+                      <td><button onclick="alert('Viewing report for ${r.patName}')" class="btn-secondary" style="padding:4px 8px; font-size:0.8rem;">View Report</button></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        } else if (currentTab === 'profile') {
+          main.innerHTML = `
+            <div class="card" style="max-width:500px;">
+              <h3>Doctor Profile</h3>
+              <p style="margin-top:1rem;"><strong>Name:</strong> Dr. Sarah Jenkins</p>
+              <p style="margin-top:6px;"><strong>Email:</strong> sarah.jenkins@mediconnect.org</p>
+              <p style="margin-top:6px;"><strong>Specialization:</strong> Cardiology</p>
+              <p style="margin-top:6px;"><strong>Qualification:</strong> MD, DM (Cardiology)</p>
+              <p style="margin-top:6px;"><strong>Experience:</strong> 12 Years</p>
+            </div>
+          `;
+        }
+      }
+    }
+
+    render();
+  </script>
+</body>
+
+</html>
