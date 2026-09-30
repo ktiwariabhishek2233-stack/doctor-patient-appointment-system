@@ -8,8 +8,7 @@ import os from 'os';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure uploads folder exists (use /tmp on Vercel serverless)
-const uploadDir = process.env.VERCEL 
+const uploadDir = process.env.VERCEL
   ? path.join(os.tmpdir(), 'uploads')
   : path.join(__dirname, '../uploads');
 
@@ -17,7 +16,6 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Storage engine
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -29,7 +27,6 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter (PDF, JPG, JPEG, PNG)
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|pdf/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -44,6 +41,6 @@ const fileFilter = (req, file, cb) => {
 
 export const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter
 });

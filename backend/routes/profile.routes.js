@@ -8,8 +8,6 @@ import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
-// @route   PUT /api/patients/:id
-// @desc    Update patient profile
 router.put('/patients/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -73,8 +71,6 @@ router.put('/patients/:id', async (req, res) => {
   }
 });
 
-// @route   PUT /api/doctors/:id
-// @desc    Update doctor profile
 router.put('/doctors/:id', async (req, res) => {
   try {
     const { id } = req.params;

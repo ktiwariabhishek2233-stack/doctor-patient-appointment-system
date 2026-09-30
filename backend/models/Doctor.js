@@ -52,7 +52,6 @@ const doctorSchema = new mongoose.Schema(
   }
 );
 
-// Virtual for slots from AvailableSlot
 doctorSchema.virtual('slots', {
   ref: 'AvailableSlot',
   localField: '_id',

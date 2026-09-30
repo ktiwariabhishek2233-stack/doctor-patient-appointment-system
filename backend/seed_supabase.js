@@ -15,7 +15,6 @@ const seedSupabaseData = async () => {
   try {
     console.log('🌱 Starting Supabase database seeding...');
 
-    // 1. Clear existing rows safely
     await client.from('reviews').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await client.from('medical_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     await client.from('appointments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -26,11 +25,9 @@ const seedSupabaseData = async () => {
 
     console.log('🧹 Cleared existing tables.');
 
-    // Pre-hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash('password123', salt);
 
-    // 2. Create Patient 1: Alex Morgan
     const { data: uAlex, error: uAlexError } = await client.from('users').insert([{
       name: 'Alex Morgan',
       email: 'alex@example.com',
@@ -53,7 +50,6 @@ const seedSupabaseData = async () => {
       phone: '555-0199'
     }]).select().single();
 
-    // Create Patient 2: Robert Sterling
     const { data: uRobert } = await client.from('users').insert([{
       name: 'Robert Sterling',
       email: 'robert@example.com',
@@ -71,7 +67,6 @@ const seedSupabaseData = async () => {
       phone: '555-0188'
     }]).select().single();
 
-    // 3. Create Doctors & Slots
     const doctorsSeed = [
       {
         name: 'Dr. Sarah Jenkins',
@@ -152,7 +147,6 @@ const seedSupabaseData = async () => {
       await client.from('available_slots').insert(slotRows);
     }
 
-    // 4. Initial Appointments
     const docSarah = doctorMap['sarah@mediconnect.org'];
     const docMarcus = doctorMap['marcus@mediconnect.org'];
     const docChen = doctorMap['michael@mediconnect.org'];
@@ -220,7 +214,6 @@ const seedSupabaseData = async () => {
       }
     ]);
 
-    // 5. Initial Medical Reports
     await client.from('medical_reports').insert([
       {
         patient_id: pAlex.id,

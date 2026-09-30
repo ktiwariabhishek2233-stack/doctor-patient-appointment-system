@@ -8,8 +8,6 @@ import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
-// @route   POST /api/reports
-// @desc    Patient uploads a medical report file
 router.post('/', (req, res) => {
   upload.single('file')(req, res, async (err) => {
     if (err) {
@@ -25,7 +23,6 @@ router.post('/', (req, res) => {
 
       const finalFileName = fileName || (req.file ? req.file.originalname : 'Medical_Report.pdf');
 
-      // --- SUPABASE STORAGE PATH (Private Bucket + Signed URL) ---
       if (isSupabaseConfigured()) {
         let storagePath = '';
         let fileUrl = '';
@@ -41,11 +38,10 @@ router.post('/', (req, res) => {
           storagePath = uploadRes.storagePath;
           fileUrl = uploadRes.signedUrl;
 
-          // Clean up local temp file
           try {
             fs.unlinkSync(req.file.path);
           } catch (e) {
-            // ignore unlink errors
+
           }
         }
 
@@ -67,7 +63,6 @@ router.post('/', (req, res) => {
         });
       }
 
-      // --- MONGO FALLBACK PATH ---
       const report = await MedicalReport.create({
         patientName: patientName || 'Patient',
         patientEmail: patientEmail ? patientEmail.trim().toLowerCase() : '',
@@ -100,8 +95,6 @@ router.post('/', (req, res) => {
   });
 });
 
-// @route   GET /api/reports
-// @desc    Get all medical reports (with optional patient filter)
 router.get('/', async (req, res) => {
   try {
     if (isSupabaseConfigured()) {

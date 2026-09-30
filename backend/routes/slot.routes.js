@@ -6,8 +6,6 @@ import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
-// @route   DELETE /api/slots/:id
-// @desc    Doctor deletes an available slot; block if booked
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;

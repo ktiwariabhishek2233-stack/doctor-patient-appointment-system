@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
-// Create configured axios instance
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,7 +9,6 @@ export const api = axios.create({
   }
 });
 
-// Interceptor to attach JWT token if present
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('mediconnect_token');
   if (token) {
@@ -19,7 +17,6 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Authentication APIs
 export const registerUser = async (userData) => {
   const response = await api.post('/auth/register', userData);
   return response.data;
@@ -35,8 +32,6 @@ export const getCurrentUser = async () => {
   return response.data;
 };
 
-
-// Doctors APIs
 export const getDoctors = async () => {
   const response = await api.get('/doctors');
   return response.data;
@@ -52,13 +47,11 @@ export const addDoctorSlot = async (doctorId, slotData) => {
   return response.data;
 };
 
-// Slots APIs
 export const deleteSlot = async (slotId) => {
   const response = await api.delete(`/slots/${slotId}`);
   return response.data;
 };
 
-// Appointments APIs
 export const bookAppointment = async (appointmentData) => {
   const response = await api.post('/appointments', appointmentData);
   return response.data;
@@ -74,7 +67,6 @@ export const updateAppointmentStatus = async (id, status) => {
   return response.data;
 };
 
-// Reports APIs
 export const uploadMedicalReport = async (formData) => {
   const response = await api.post('/reports', formData, {
     headers: {
@@ -89,7 +81,6 @@ export const getMedicalReports = async (params = {}) => {
   return response.data;
 };
 
-// Profiles APIs
 export const updatePatientProfile = async (id, data) => {
   const response = await api.put(`/patients/${id}`, data);
   return response.data;

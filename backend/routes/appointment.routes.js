@@ -8,8 +8,6 @@ import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
-// @route   POST /api/appointments
-// @desc    Patient books an appointment (marks slot booked & prevents double-booking)
 router.post('/', async (req, res) => {
   try {
     const {
@@ -39,7 +37,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Resolve doctor
     let doc = null;
     if (mongoose.Types.ObjectId.isValid(doctorId)) {
       doc = await Doctor.findById(doctorId);
@@ -54,7 +51,6 @@ router.post('/', async (req, res) => {
     const actualDoctorName = doc ? doc.name : (doctorName || 'Doctor');
     const actualSpec = doc ? doc.specialization : (specialization || 'General Physician');
 
-    // 1. Check for double booking for this doctor, date, and time
     const existingActiveAppointment = await Appointment.findOne({
       doctorId: actualDoctorId,
       date: date.trim(),
@@ -68,7 +64,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // 2. Mark the slot as Booked in AvailableSlot if exists, or create slot marked Booked
     let slot = await AvailableSlot.findOne({
       doctorId: actualDoctorId,
       time: time.trim()
@@ -89,7 +84,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // 3. Create appointment
     const appointment = await Appointment.create({
       patientName: patientName || 'Patient',
       patientAge: Number(patientAge) || 30,
@@ -133,8 +127,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/appointments
-// @desc    Get appointments with optional filters
 router.get('/', async (req, res) => {
   try {
     if (isSupabaseConfigured()) {
@@ -196,8 +188,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   PATCH /api/appointments/:id
-// @desc    Update appointment status (ACCEPT/REJECT/COMPLETED). If REJECTED, release slot.
 router.patch('/:id', async (req, res) => {
   try {
     const { id } = req.params;

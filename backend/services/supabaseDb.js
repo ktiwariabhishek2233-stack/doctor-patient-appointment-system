@@ -1,7 +1,6 @@
 import { getSupabaseClient } from '../config/supabase.js';
 import bcrypt from 'bcryptjs';
 
-// Helper to get active client
 const getClient = () => {
   const client = getSupabaseClient();
   if (!client) {
@@ -9,10 +8,6 @@ const getClient = () => {
   }
   return client;
 };
-
-// ==============================================================================
-// 1. AUTHENTICATION & USERS
-// ==============================================================================
 
 export const findUserByEmail = async (email) => {
   const client = getClient();
@@ -58,11 +53,9 @@ export const createUserWithProfile = async (userData) => {
 
   const cleanEmail = email.trim().toLowerCase();
 
-  // 1. Hash password with bcrypt before saving
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  // 2. Insert into users table
   const { data: newUser, error: userError } = await client
     .from('users')
     .insert([
@@ -78,7 +71,6 @@ export const createUserWithProfile = async (userData) => {
 
   if (userError) throw userError;
 
-  // 3. Create role-specific record
   if (role === 'doctor') {
     const docName = name.trim().startsWith('Dr.') ? name.trim() : `Dr. ${name.trim()}`;
     const expStr = experience?.toLowerCase().includes('year') ? experience : `${experience || '1'} Years`;
@@ -101,7 +93,6 @@ export const createUserWithProfile = async (userData) => {
 
     if (docError) throw docError;
 
-    // Create default starter slots for newly registered doctor
     const defaultTimes = ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'];
     const slotRows = defaultTimes.map((time) => ({
       doctor_id: newDoc.id,
@@ -112,7 +103,7 @@ export const createUserWithProfile = async (userData) => {
 
     await client.from('available_slots').insert(slotRows);
   } else {
-    // Patient profile
+
     const { error: patError } = await client
       .from('patients')
       .insert([
@@ -185,10 +176,6 @@ export const formatUserResponse = async (user) => {
   };
 };
 
-// ==============================================================================
-// 2. DOCTORS & SLOTS
-// ==============================================================================
-
 export const getAllDoctors = async () => {
   const client = getClient();
   const { data: doctors, error } = await client
@@ -218,7 +205,7 @@ export const getAllDoctors = async () => {
 
 export const getDoctorById = async (id) => {
   const client = getClient();
-  // Check by doctor id or user_id
+
   let { data: doc, error } = await client
     .from('doctors')
     .select('*, available_slots(*)')
@@ -258,11 +245,9 @@ export const getDoctorById = async (id) => {
 export const addDoctorSlot = async (doctorId, { time, date }) => {
   const client = getClient();
 
-  // Find actual doctor
   let doc = await getDoctorById(doctorId);
   if (!doc) throw new Error('Doctor not found');
 
-  // Check for existing slot
   const { data: existingSlot } = await client
     .from('available_slots')
     .select('id')
@@ -349,7 +334,6 @@ export const updateDoctorProfile = async (id, data) => {
 
   if (error) throw error;
 
-  // Sync parent user
   if (updatedDoc.user_id && (data.name || data.email)) {
     await client
       .from('users')
@@ -372,10 +356,6 @@ export const updateDoctorProfile = async (id, data) => {
   };
 };
 
-// ==============================================================================
-// 3. APPOINTMENTS (Atomic Double-Booking Prevention)
-// ==============================================================================
-
 export const bookAppointment = async (appointmentData) => {
   const client = getClient();
   const {
@@ -393,7 +373,6 @@ export const bookAppointment = async (appointmentData) => {
     reason
   } = appointmentData;
 
-  // Resolve Doctor
   let doc = await getDoctorById(doctorId);
   if (!doc && doctorName) {
     const { data: d } = await client
@@ -408,7 +387,6 @@ export const bookAppointment = async (appointmentData) => {
   const actualDoctorName = doc ? doc.name : (doctorName || 'Doctor');
   const actualSpec = doc ? doc.specialization : (specialization || 'General Physician');
 
-  // 1. Double-booking check: active appointments (PENDING or ACCEPTED)
   const { data: existingApt } = await client
     .from('appointments')
     .select('id')
@@ -424,7 +402,6 @@ export const bookAppointment = async (appointmentData) => {
     throw err;
   }
 
-  // 2. Mark slot booked in available_slots
   const { data: slot } = await client
     .from('available_slots')
     .select('*')
@@ -455,7 +432,6 @@ export const bookAppointment = async (appointmentData) => {
       ]);
   }
 
-  // 3. Insert Appointment record
   const { data: appointment, error } = await client
     .from('appointments')
     .insert([
@@ -565,7 +541,6 @@ export const updateAppointmentStatus = async (id, status) => {
 
   if (updateErr) throw updateErr;
 
-  // If REJECTED, release slot back to 'Available'
   if (validStatus === 'REJECTED') {
     await client
       .from('available_slots')
@@ -592,17 +567,12 @@ export const updateAppointmentStatus = async (id, status) => {
   };
 };
 
-// ==============================================================================
-// 4. MEDICAL REPORTS (Private Storage & Signed URLs)
-// ==============================================================================
-
 export const uploadReportToPrivateStorage = async (fileBuffer, fileName, mimeType, patientEmail) => {
   const client = getClient();
   const cleanEmail = patientEmail.replace(/[^a-zA-Z0-9_-]/g, '_');
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const storagePath = `${cleanEmail}/${Date.now()}_${safeName}`;
 
-  // Upload to private bucket 'medical-reports'
   const { data, error } = await client.storage
     .from('medical-reports')
     .upload(storagePath, fileBuffer, {
@@ -615,7 +585,6 @@ export const uploadReportToPrivateStorage = async (fileBuffer, fileName, mimeTyp
     throw error;
   }
 
-  // Generate a secure signed URL valid for 24 hours (86400 seconds)
   const { data: signedData, error: signErr } = await client.storage
     .from('medical-reports')
     .createSignedUrl(storagePath, 86400);
@@ -691,7 +660,6 @@ export const getMedicalReports = async (filters = {}) => {
   const { data: reports, error } = await query;
   if (error) throw error;
 
-  // Refresh signed URLs if using private storage path
   const enriched = await Promise.all(
     (reports || []).map(async (r) => {
       let activeUrl = r.file_url;
@@ -717,10 +685,6 @@ export const getMedicalReports = async (filters = {}) => {
 
   return enriched;
 };
-
-// ==============================================================================
-// 5. PATIENT PROFILES
-// ==============================================================================
 
 export const getAllPatients = async () => {
   const client = getClient();

@@ -1,13 +1,6 @@
--- ==============================================================================
--- MediConnect Doctor-Patient Appointment System
--- Supabase PostgreSQL Hardened Production Schema & Migration Script
--- ==============================================================================
-
--- 1. Enable Required Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 2. Trigger Function for Automatically Updating 'updated_at' Timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -16,11 +9,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ==============================================================================
--- 3. Core Tables
--- ==============================================================================
-
--- 3.1 Users Table (Authentication Credentials & Roles)
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
@@ -31,7 +19,6 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3.2 Doctors Table
 CREATE TABLE IF NOT EXISTS doctors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -45,7 +32,6 @@ CREATE TABLE IF NOT EXISTS doctors (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3.3 Patients Table
 CREATE TABLE IF NOT EXISTS patients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -59,7 +45,6 @@ CREATE TABLE IF NOT EXISTS patients (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3.4 Available Slots Table
 CREATE TABLE IF NOT EXISTS available_slots (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   doctor_id UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
@@ -70,7 +55,6 @@ CREATE TABLE IF NOT EXISTS available_slots (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3.5 Appointments Table
 CREATE TABLE IF NOT EXISTS appointments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id UUID REFERENCES patients(id) ON DELETE SET NULL,
@@ -90,7 +74,6 @@ CREATE TABLE IF NOT EXISTS appointments (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3.6 Medical Reports Table
 CREATE TABLE IF NOT EXISTS medical_reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id UUID REFERENCES patients(id) ON DELETE SET NULL,
@@ -106,7 +89,6 @@ CREATE TABLE IF NOT EXISTS medical_reports (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 3.7 Reviews Table
 CREATE TABLE IF NOT EXISTS reviews (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   doctor_id UUID NOT NULL REFERENCES doctors(id) ON DELETE CASCADE,
@@ -118,12 +100,8 @@ CREATE TABLE IF NOT EXISTS reviews (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- ==============================================================================
--- 4. Database-Level Double-Booking Prevention & Performance Indexes
--- ==============================================================================
-
-CREATE UNIQUE INDEX IF NOT EXISTS uq_active_doctor_appointment 
-ON appointments(doctor_id, date, time) 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_active_doctor_appointment
+ON appointments(doctor_id, date, time)
 WHERE status IN ('PENDING', 'ACCEPTED');
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -137,10 +115,6 @@ CREATE INDEX IF NOT EXISTS idx_appointments_patient_email ON appointments(patien
 CREATE INDEX IF NOT EXISTS idx_appointments_status ON appointments(status);
 CREATE INDEX IF NOT EXISTS idx_medical_reports_patient_email ON medical_reports(patient_email);
 CREATE INDEX IF NOT EXISTS idx_reviews_doctor_id ON reviews(doctor_id);
-
--- ==============================================================================
--- 5. Auto-Update Timestamp Triggers
--- ==============================================================================
 
 DROP TRIGGER IF EXISTS trg_users_updated_at ON users;
 CREATE TRIGGER trg_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -163,10 +137,6 @@ CREATE TRIGGER trg_medical_reports_updated_at BEFORE UPDATE ON medical_reports F
 DROP TRIGGER IF EXISTS trg_reviews_updated_at ON reviews;
 CREATE TRIGGER trg_reviews_updated_at BEFORE UPDATE ON reviews FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- ==============================================================================
--- 6. Row Level Security (RLS) Policies
--- ==============================================================================
-
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE doctors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE patients ENABLE ROW LEVEL SECURITY;
@@ -175,7 +145,6 @@ ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE medical_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
--- Public discovery read
 DROP POLICY IF EXISTS "Public can view doctors" ON doctors;
 CREATE POLICY "Public can view doctors" ON doctors FOR SELECT USING (true);
 
@@ -185,7 +154,6 @@ CREATE POLICY "Public can view available slots" ON available_slots FOR SELECT US
 DROP POLICY IF EXISTS "Public can view reviews" ON reviews;
 CREATE POLICY "Public can view reviews" ON reviews FOR SELECT USING (true);
 
--- Backend Service Role Bypass Policies (For Node.js backend)
 DROP POLICY IF EXISTS "Service role full access users" ON users;
 CREATE POLICY "Service role full access users" ON users FOR ALL TO service_role USING (true) WITH CHECK (true);
 
@@ -207,9 +175,6 @@ CREATE POLICY "Service role full access medical_reports" ON medical_reports FOR 
 DROP POLICY IF EXISTS "Service role full access reviews" ON reviews;
 CREATE POLICY "Service role full access reviews" ON reviews FOR ALL TO service_role USING (true) WITH CHECK (true);
 
--- ==============================================================================
--- 7. Grant Table Permissions to Service Role
--- ==============================================================================
 GRANT USAGE ON SCHEMA public TO service_role, anon, authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;

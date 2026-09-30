@@ -14,7 +14,6 @@ const seedData = async () => {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mediconnect');
     console.log('Connected to MongoDB for seeding...');
 
-    // Clear existing data
     await User.deleteMany({});
     await Doctor.deleteMany({});
     await Patient.deleteMany({});
@@ -23,7 +22,6 @@ const seedData = async () => {
     await MedicalReport.deleteMany({});
     console.log('Cleared existing collections.');
 
-    // 1. Create Patient Users & Patients
     const alexUser = await User.create({
       name: 'Alex Morgan',
       email: 'alex@example.com',
@@ -56,7 +54,6 @@ const seedData = async () => {
       phone: '555-0188'
     });
 
-    // 2. Create Doctors & AvailableSlots
     const doctorsRaw = [
       {
         name: 'Dr. Sarah Jenkins',
@@ -177,7 +174,6 @@ const seedData = async () => {
       }
     }
 
-    // 3. Create Initial Appointments
     await Appointment.create([
       {
         patientName: 'Alex Morgan',
@@ -241,7 +237,6 @@ const seedData = async () => {
       }
     ]);
 
-    // 4. Create Initial Medical Reports
     await MedicalReport.create([
       {
         patientName: 'Alex Morgan',

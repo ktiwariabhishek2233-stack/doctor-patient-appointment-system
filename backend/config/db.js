@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 export const connectDB = async () => {
-  // If already connected, reuse existing connection (crucial for Vercel serverless)
+
   if (mongoose.connection.readyState >= 1) {
     return;
   }

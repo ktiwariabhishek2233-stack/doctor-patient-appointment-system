@@ -7,8 +7,6 @@ import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
-// @route   GET /api/patients
-// @desc    Get all patients
 router.get('/', async (req, res) => {
   try {
     if (isSupabaseConfigured()) {
@@ -33,8 +31,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/patients/:id
-// @desc    Get single patient by ID
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -75,8 +71,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// @route   PUT /api/patients/:id
-// @desc    Update patient profile
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;

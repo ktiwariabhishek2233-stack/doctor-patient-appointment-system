@@ -9,7 +9,6 @@ import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
-// Helper to assemble full user object for frontend compatibility (MongoDB fallback)
 const formatMongoUserResponse = async (user) => {
   let extra = {};
   if (user.role === 'doctor') {
@@ -46,8 +45,6 @@ const formatMongoUserResponse = async (user) => {
   };
 };
 
-// @route   POST /api/auth/register
-// @desc    Register a patient or doctor
 router.post('/register', async (req, res) => {
   try {
     const {
@@ -71,7 +68,6 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
-    // --- SUPABASE PATH ---
     if (isSupabaseConfigured()) {
       const existingUser = await supabaseDb.findUserByEmail(cleanEmail);
       if (existingUser) {
@@ -103,7 +99,6 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // --- MONGO FALLBACK PATH ---
     const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return res.status(400).json({
@@ -166,8 +161,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// @route   POST /api/auth/login
-// @desc    Authenticate user & get token
 router.post('/login', async (req, res) => {
   try {
     const { email, password, role } = req.body;
@@ -177,7 +170,6 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    // --- SUPABASE PATH ---
     if (isSupabaseConfigured()) {
       const user = await supabaseDb.findUserByEmail(cleanEmail);
       if (!user) {
@@ -207,7 +199,6 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // --- MONGO FALLBACK PATH ---
     const user = await User.findOne({ email: cleanEmail });
     if (!user) {
       return res.status(404).json({
@@ -240,8 +231,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// @route   GET /api/auth/me
-// @desc    Get current authenticated user info
 router.get('/me', protect, async (req, res) => {
   try {
     if (isSupabaseConfigured()) {

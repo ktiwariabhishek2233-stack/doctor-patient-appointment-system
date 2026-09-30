@@ -7,8 +7,6 @@ import * as supabaseDb from '../services/supabaseDb.js';
 
 const router = express.Router();
 
-// @route   GET /api/doctors
-// @desc    Get all doctors with their slots
 router.get('/', async (req, res) => {
   try {
     if (isSupabaseConfigured()) {
@@ -42,8 +40,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/doctors/:id
-// @desc    Get a doctor by ID
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -93,8 +89,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// @route   POST /api/doctors/:id/slots
-// @desc    Doctor adds a new available time slot
 router.post('/:id/slots', async (req, res) => {
   try {
     const { id } = req.params;
@@ -157,8 +151,6 @@ router.post('/:id/slots', async (req, res) => {
   }
 });
 
-// @route   PUT /api/doctors/:id
-// @desc    Doctor updates profile
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;

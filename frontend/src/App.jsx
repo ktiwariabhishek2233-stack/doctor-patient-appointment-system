@@ -15,7 +15,6 @@ export default function App() {
   const [appointments, setAppointments] = useState([]);
   const [medicalReports, setMedicalReports] = useState([]);
 
-  // Authenticate user on initial load using stored JWT token
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('mediconnect_token');
